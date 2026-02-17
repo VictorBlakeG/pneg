@@ -259,8 +259,26 @@
             <div class="control-group">
                 <label for="temperature">Temperature: <span id="tempValue">300</span> K</label>
                 <input type="range" id="temperature" min="0" max="700" value="300">
+                <div style="display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                        <input type="radio" name="tempPreset" value="0">
+                        <span>0K</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                        <input type="radio" name="tempPreset" value="180">
+                        <span>180K</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                        <input type="radio" name="tempPreset" value="300" checked>
+                        <span>300K</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                        <input type="radio" name="tempPreset" value="700">
+                        <span>700K</span>
+                    </label>
+                </div>
             </div>
-            
+
             <div class="control-group">
                 <label for="nDopant">N-type Dopant</label>
                 <select id="nDopant"></select>
@@ -1280,9 +1298,30 @@
         
         document.getElementById('temperature').addEventListener('input', function() {
             document.getElementById('tempValue').textContent = this.value;
+            // Clear radio button selection when slider is manually adjusted
+            const radios = document.querySelectorAll('input[name="tempPreset"]');
+            radios.forEach(radio => {
+                if (radio.value !== this.value) {
+                    radio.checked = false;
+                } else {
+                    radio.checked = true;
+                }
+            });
             update();
         });
-        
+
+        // Temperature preset radio buttons
+        document.querySelectorAll('input[name="tempPreset"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    const tempSlider = document.getElementById('temperature');
+                    tempSlider.value = this.value;
+                    document.getElementById('tempValue').textContent = this.value;
+                    update();
+                }
+            });
+        });
+
         document.getElementById('nConc').addEventListener('input', function() {
             const value = Math.pow(10, parseFloat(this.value));
             document.getElementById('nConcValue').textContent = value.toExponential(2);
