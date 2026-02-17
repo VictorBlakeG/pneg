@@ -290,7 +290,12 @@
                 <input type="checkbox" id="showQuasiFermi">
                 <label for="showQuasiFermi">Show Quasi-Fermi Levels</label>
             </div>
-            
+
+            <div class="control-group checkbox-group">
+                <input type="checkbox" id="showEi" checked>
+                <label for="showEi">Show Intrinsic Level (Ei)</label>
+            </div>
+
             <div class="control-group checkbox-group">
                 <input type="checkbox" id="showCalculations">
                 <label for="showCalculations">Show Calculations</label>
@@ -463,6 +468,7 @@
             const pConc = Math.pow(10, parseFloat(document.getElementById('pConc').value));
             const forwardBias = parseFloat(document.getElementById('forwardBias').value);
             const showQuasiFermi = document.getElementById('showQuasiFermi').checked;
+            const showEi = document.getElementById('showEi').checked;
             
             const mat = MATERIALS[currentMaterial];
             const Eg = calculateBandgap(currentMaterial, temperature);
@@ -484,7 +490,7 @@
             const Efn_p = Ef_p + qV;
             const Efp_n = Ef_n - qV;
             
-            return { Eg, Ev, Ec, Ei, Ef_n, Ef_p, Vbi, ni, Efn_n, Efp_p, Efn_p, Efp_n, kT, mat, temperature, nConc, pConc, forwardBias, showQuasiFermi };
+            return { Eg, Ev, Ec, Ei, Ef_n, Ef_p, Vbi, ni, Efn_n, Efp_p, Efn_p, Efp_n, kT, mat, temperature, nConc, pConc, forwardBias, showQuasiFermi, showEi };
         }
         
         // Physical constants
@@ -868,8 +874,11 @@
                     borderWidth: 3,
                     pointRadius: 0,
                     tension: 0.4
-                },
-                {
+                }
+            ];
+
+            if (calc.showEi) {
+                datasets.push({
                     label: 'Intrinsic Level (Ei)',
                     data: Ei_data,
                     borderColor: '#9333ea',
@@ -878,9 +887,9 @@
                     borderDash: [5, 5],
                     pointRadius: 0,
                     tension: 0.4
-                }
-            ];
-            
+                });
+            }
+
             if (!calc.showQuasiFermi) {
                 datasets.push({
                     label: 'Fermi Level (Ef)',
@@ -1292,6 +1301,7 @@
         });
         
         document.getElementById('showQuasiFermi').addEventListener('change', update);
+        document.getElementById('showEi').addEventListener('change', update);
         document.getElementById('showCalculations').addEventListener('change', update);
         document.getElementById('nDopant').addEventListener('change', update);
         document.getElementById('pDopant').addEventListener('change', update);
