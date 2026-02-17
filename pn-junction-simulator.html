@@ -305,7 +305,7 @@
             </div>
             
             <div class="control-group checkbox-group">
-                <input type="checkbox" id="showQuasiFermi">
+                <input type="checkbox" id="showQuasiFermi" checked>
                 <label for="showQuasiFermi">Show Quasi-Fermi Levels</label>
             </div>
 
@@ -835,7 +835,7 @@
         }
         
         function updateChart(calc) {
-            const points = 100;
+            const points = 200;  // Increased for smoother curves
             const positions = [];
             const Ec_data = [];
             const Ev_data = [];
@@ -843,33 +843,76 @@
             const Ei_data = [];
             const Efn_data = [];
             const Efp_data = [];
-            
+
+            // Depletion region width (normalized units)
+            const depletionWidth = 0.4;  // Spans ±0.2 from junction
+
             for (let i = 0; i <= points; i++) {
                 const x = (i / points) * 2 - 1;
                 positions.push(x);
-                
-                let Ec_bent, Ev_bent, Ef, Efn, Efp;
-                
-                if (x < 0) {
-                    const bend = Math.abs(x) < 0.2 ? (1 - Math.abs(x) / 0.2) * calc.Vbi / 2 : 0;
-                    Ec_bent = calc.Ec - bend;
-                    Ev_bent = calc.Ev - bend;
-                    Ef = calc.Ef_n - bend;
-                    Efn = calc.showQuasiFermi ? calc.Efn_n - bend : null;
-                    Efp = calc.showQuasiFermi ? calc.Efp_n - bend : null;
+
+                // Smooth physics-based band bending using polynomial transition
+                let bendingPotential;
+                if (x <= -depletionWidth / 2) {
+                    // Far n-side: no bending
+                    bendingPotential = 0;
+                } else if (x >= depletionWidth / 2) {
+                    // Far p-side: full Vbi drop
+                    bendingPotential = calc.Vbi;
                 } else {
-                    const bend = Math.abs(x) < 0.2 ? (1 - Math.abs(x) / 0.2) * calc.Vbi / 2 : calc.Vbi / 2;
-                    Ec_bent = calc.Ec - calc.Vbi / 2 + bend;
-                    Ev_bent = calc.Ev - calc.Vbi / 2 + bend;
-                    Ef = calc.Ef_p - calc.Vbi / 2 + bend;
-                    Efn = calc.showQuasiFermi ? calc.Efn_p - calc.Vbi / 2 + bend : null;
-                    Efp = calc.showQuasiFermi ? calc.Efp_p - calc.Vbi / 2 + bend : null;
+                    // Junction region: smooth polynomial transition (parabolic-like)
+                    // Use smoothstep function for C1 continuity (smooth first derivative)
+                    const t = (x + depletionWidth / 2) / depletionWidth;  // Maps to [0,1]
+                    const smoothT = t * t * (3 - 2 * t);  // Smoothstep: 3t² - 2t³
+                    bendingPotential = smoothT * calc.Vbi;
                 }
-                
+
+                // Apply bending consistently to all bands
+                const Ec_bent = calc.Ec - bendingPotential;
+                const Ev_bent = calc.Ev - bendingPotential;
+                const Ei_bent = calc.Ei - bendingPotential;
+
+                // Fermi level: CONSTANT in equilibrium (fundamental physics)
+                // In equilibrium, EF is the same everywhere - this defines equilibrium!
+                // Use n-side Fermi level as the reference (correct absolute position)
+                let Ef = calc.Ef_n;  // Constant across entire device at n-side Fermi level
+
+                // Quasi-Fermi levels (if enabled): split under forward bias
+                let Efn, Efp;
+                if (calc.showQuasiFermi) {
+                    if (calc.forwardBias === 0) {
+                        // At equilibrium: quasi-Fermi levels collapse to single Fermi level
+                        // No separation - this is the definition of thermal equilibrium
+                        Efn = calc.Ef_n;
+                        Efp = calc.Ef_n;
+                    } else {
+                        // Under bias: piecewise behavior
+                        // Flat in neutral regions, smooth transition in depletion region only
+                        if (x <= -depletionWidth / 2) {
+                            // N-side neutral region: constant quasi-Fermi levels
+                            Efn = calc.Efn_n;
+                            Efp = calc.Efp_n;
+                        } else if (x >= depletionWidth / 2) {
+                            // P-side neutral region: constant quasi-Fermi levels
+                            Efn = calc.Efn_p;
+                            Efp = calc.Efp_p;
+                        } else {
+                            // Depletion region: smooth transition using smoothstep
+                            const t = (x + depletionWidth / 2) / depletionWidth;
+                            const smoothT = t * t * (3 - 2 * t);  // Smoothstep polynomial
+                            Efn = calc.Efn_n * (1 - smoothT) + calc.Efn_p * smoothT;
+                            Efp = calc.Efp_n * (1 - smoothT) + calc.Efp_p * smoothT;
+                        }
+                    }
+                } else {
+                    Efn = null;
+                    Efp = null;
+                }
+
                 Ec_data.push(Ec_bent);
                 Ev_data.push(Ev_bent);
                 Ef_data.push(Ef);
-                Ei_data.push(calc.Ei - (x < 0 ? 0 : calc.Vbi / 2) + (Math.abs(x) < 0.2 ? (1 - Math.abs(x) / 0.2) * calc.Vbi / 2 : (x < 0 ? 0 : calc.Vbi / 2)));
+                Ei_data.push(Ei_bent);
                 Efn_data.push(Efn);
                 Efp_data.push(Efp);
             }
@@ -882,7 +925,7 @@
                     backgroundColor: '#2563eb',
                     borderWidth: 3,
                     pointRadius: 0,
-                    tension: 0.4
+                    tension: 0.6
                 },
                 {
                     label: 'Valence Band (Ev)',
@@ -891,7 +934,7 @@
                     backgroundColor: '#dc2626',
                     borderWidth: 3,
                     pointRadius: 0,
-                    tension: 0.4
+                    tension: 0.6
                 }
             ];
 
@@ -904,7 +947,7 @@
                     borderWidth: 2,
                     borderDash: [5, 5],
                     pointRadius: 0,
-                    tension: 0.4
+                    tension: 0.6
                 });
             }
 
@@ -916,7 +959,7 @@
                     backgroundColor: '#059669',
                     borderWidth: 2,
                     pointRadius: 0,
-                    tension: 0.4
+                    tension: 0.6
                 });
             } else {
                 datasets.push({
@@ -927,7 +970,7 @@
                     borderWidth: 2,
                     borderDash: [3, 3],
                     pointRadius: 0,
-                    tension: 0.4
+                    tension: 0.6
                 });
                 datasets.push({
                     label: 'Quasi-Fermi (holes)',
@@ -937,7 +980,7 @@
                     borderWidth: 2,
                     borderDash: [3, 3],
                     pointRadius: 0,
-                    tension: 0.4
+                    tension: 0.6
                 });
             }
             
