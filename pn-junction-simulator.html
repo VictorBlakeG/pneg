@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>P-N Junction Fermi Level Simulator</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@latest/dist/chartjs-plugin-annotation.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -509,7 +510,80 @@
             
             return { xp, xn, W, E_max, Vbi_eff, eps, ND, NA };
         }
-        
+
+        function createDepletionAnnotations(dep) {
+            const xp_um = dep.xp * 1e6;  // Convert to micrometers
+            const xn_um = dep.xn * 1e6;
+
+            return {
+                depletionXp: {
+                    type: 'line',
+                    xMin: -xp_um,
+                    xMax: -xp_um,
+                    borderColor: '#9333ea',
+                    borderWidth: 1.5,
+                    borderDash: [6, 4],
+                    label: {
+                        display: true,
+                        content: `−xₚ = ${xp_um.toFixed(4)} μm`,
+                        position: 'start',
+                        backgroundColor: 'rgba(147, 51, 234, 0.8)',
+                        color: 'white',
+                        font: { size: 10, weight: 'bold' },
+                        padding: 4
+                    }
+                },
+                junction: {
+                    type: 'line',
+                    xMin: 0,
+                    xMax: 0,
+                    borderColor: '#059669',
+                    borderWidth: 2,
+                    borderDash: [3, 3],
+                    label: {
+                        display: true,
+                        content: 'Junction (x=0)',
+                        position: 'start',
+                        backgroundColor: 'rgba(5, 150, 105, 0.8)',
+                        color: 'white',
+                        font: { size: 10, weight: 'bold' },
+                        padding: 4
+                    }
+                },
+                depletionXn: {
+                    type: 'line',
+                    xMin: xn_um,
+                    xMax: xn_um,
+                    borderColor: '#2563eb',
+                    borderWidth: 1.5,
+                    borderDash: [6, 4],
+                    label: {
+                        display: true,
+                        content: `+xₙ = ${xn_um.toFixed(4)} μm`,
+                        position: 'start',
+                        backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                        color: 'white',
+                        font: { size: 10, weight: 'bold' },
+                        padding: 4
+                    }
+                },
+                depletionRegion: {
+                    type: 'box',
+                    xMin: -xp_um,
+                    xMax: xn_um,
+                    backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                    borderWidth: 0,
+                    label: {
+                        display: true,
+                        content: `W = ${(dep.W * 1e6).toFixed(4)} μm`,
+                        position: 'center',
+                        color: '#6b7280',
+                        font: { size: 9, style: 'italic' }
+                    }
+                }
+            };
+        }
+
         function updatePotentialChart(calc) {
             const dep = calculateDepletionParams(calc);
             const { xp, xn, Vbi_eff, eps, ND, NA } = dep;
@@ -616,6 +690,9 @@
                                 title: ctx => 'x = ' + parseFloat(ctx[0].label).toFixed(4) + ' μm',
                                 label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(4) + ' V'
                             }
+                        },
+                        annotation: {
+                            annotations: createDepletionAnnotations(dep)
                         }
                     },
                     scales: {
@@ -669,6 +746,9 @@
                                 title: ctx => 'x = ' + parseFloat(ctx[0].label).toFixed(4) + ' μm',
                                 label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2)
                             }
+                        },
+                        annotation: {
+                            annotations: createDepletionAnnotations(dep)
                         }
                     },
                     scales: {
@@ -693,7 +773,7 @@
             
             // Info text
             document.getElementById('potentialChartInfo').innerHTML = `
-                <p style="font-weight: 600;">φ<sub>bi</sub> = ${Vbi_eff.toFixed(4)} V | W = ${(dep.W * 1e6).toFixed(4)} μm | x<sub>p</sub> = ${xp_um.toFixed(4)} μm | x<sub>n</sub> = ${xn_um.toFixed(4)} μm | E<sub>max</sub> = ${(dep.E_max/100).toExponential(2)} V/cm</p>
+                <p style="font-weight: 600;">φ<sub>bi</sub> = ${Vbi_eff.toFixed(4)} V | W = ${(dep.W * 1e6).toFixed(4)} μm | <span style="color: #9333ea;">x<sub>p</sub> = ${xp_um.toFixed(4)} μm</span> | <span style="color: #2563eb;">x<sub>n</sub> = ${xn_um.toFixed(4)} μm</span> | E<sub>max</sub> = ${(dep.E_max/100).toExponential(2)} V/cm</p>
             `;
         }
         
