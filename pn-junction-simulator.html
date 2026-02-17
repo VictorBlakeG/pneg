@@ -1336,6 +1336,7 @@
         document.getElementById('material').addEventListener('change', function() {
             currentMaterial = this.value;
             updateDopantOptions();
+            saveState();
             update();
         });
         
@@ -1350,6 +1351,7 @@
                     radio.checked = true;
                 }
             });
+            saveState();
             update();
         });
 
@@ -1360,6 +1362,7 @@
                     const tempSlider = document.getElementById('temperature');
                     tempSlider.value = this.value;
                     document.getElementById('tempValue').textContent = this.value;
+                    saveState();
                     update();
                 }
             });
@@ -1368,27 +1371,127 @@
         document.getElementById('nConc').addEventListener('input', function() {
             const value = Math.pow(10, parseFloat(this.value));
             document.getElementById('nConcValue').textContent = value.toExponential(2);
+            saveState();
             update();
         });
         
         document.getElementById('pConc').addEventListener('input', function() {
             const value = Math.pow(10, parseFloat(this.value));
             document.getElementById('pConcValue').textContent = value.toExponential(2);
+            saveState();
             update();
         });
         
         document.getElementById('forwardBias').addEventListener('input', function() {
             document.getElementById('biasValue').textContent = parseFloat(this.value).toFixed(3);
+            saveState();
             update();
         });
         
-        document.getElementById('showQuasiFermi').addEventListener('change', update);
-        document.getElementById('showEi').addEventListener('change', update);
-        document.getElementById('showCalculations').addEventListener('change', update);
-        document.getElementById('nDopant').addEventListener('change', update);
-        document.getElementById('pDopant').addEventListener('change', update);
-        
+        document.getElementById('showQuasiFermi').addEventListener('change', function() {
+            saveState();
+            update();
+        });
+        document.getElementById('showEi').addEventListener('change', function() {
+            saveState();
+            update();
+        });
+        document.getElementById('showCalculations').addEventListener('change', function() {
+            saveState();
+            update();
+        });
+        document.getElementById('nDopant').addEventListener('change', function() {
+            saveState();
+            update();
+        });
+        document.getElementById('pDopant').addEventListener('change', function() {
+            saveState();
+            update();
+        });
+
+        // State persistence functions
+        function saveState() {
+            const state = {
+                material: document.getElementById('material').value,
+                temperature: document.getElementById('temperature').value,
+                tempPreset: document.querySelector('input[name="tempPreset"]:checked')?.value || null,
+                nConc: document.getElementById('nConc').value,
+                pConc: document.getElementById('pConc').value,
+                forwardBias: document.getElementById('forwardBias').value,
+                nDopant: document.getElementById('nDopant').value,
+                pDopant: document.getElementById('pDopant').value,
+                showQuasiFermi: document.getElementById('showQuasiFermi').checked,
+                showEi: document.getElementById('showEi').checked,
+                showCalculations: document.getElementById('showCalculations').checked
+            };
+            localStorage.setItem('pnJunctionState', JSON.stringify(state));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('pnJunctionState');
+            if (!saved) return;
+
+            try {
+                const state = JSON.parse(saved);
+
+                // Restore material
+                if (state.material) {
+                    document.getElementById('material').value = state.material;
+                    currentMaterial = state.material;
+                }
+
+                // Restore temperature slider
+                if (state.temperature) {
+                    document.getElementById('temperature').value = state.temperature;
+                    document.getElementById('tempValue').textContent = state.temperature;
+                }
+
+                // Restore temperature preset radio
+                if (state.tempPreset) {
+                    const radio = document.querySelector(`input[name="tempPreset"][value="${state.tempPreset}"]`);
+                    if (radio) radio.checked = true;
+                }
+
+                // Restore concentration sliders
+                if (state.nConc) {
+                    document.getElementById('nConc').value = state.nConc;
+                    const nValue = Math.pow(10, parseFloat(state.nConc));
+                    document.getElementById('nConcValue').textContent = nValue.toExponential(2);
+                }
+
+                if (state.pConc) {
+                    document.getElementById('pConc').value = state.pConc;
+                    const pValue = Math.pow(10, parseFloat(state.pConc));
+                    document.getElementById('pConcValue').textContent = pValue.toExponential(2);
+                }
+
+                // Restore forward bias
+                if (state.forwardBias !== undefined) {
+                    document.getElementById('forwardBias').value = state.forwardBias;
+                    document.getElementById('biasValue').textContent = parseFloat(state.forwardBias).toFixed(3);
+                }
+
+                // Restore dopant selectors
+                if (state.nDopant) document.getElementById('nDopant').value = state.nDopant;
+                if (state.pDopant) document.getElementById('pDopant').value = state.pDopant;
+
+                // Restore checkboxes
+                if (state.showQuasiFermi !== undefined) {
+                    document.getElementById('showQuasiFermi').checked = state.showQuasiFermi;
+                }
+                if (state.showEi !== undefined) {
+                    document.getElementById('showEi').checked = state.showEi;
+                }
+                if (state.showCalculations !== undefined) {
+                    document.getElementById('showCalculations').checked = state.showCalculations;
+                }
+            } catch (e) {
+                console.error('Failed to load saved state:', e);
+            }
+        }
+
         // Initialize
+        loadState();  // Restore saved settings
         updateDopantOptions();
         update();
     </script>
