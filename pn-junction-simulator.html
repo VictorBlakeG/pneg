@@ -303,23 +303,30 @@
                 <label for="forwardBias">Forward Bias: <span id="biasValue">0.000</span> V</label>
                 <input type="range" id="forwardBias" min="0" max="1" step="0.01" value="0">
             </div>
-            
-            <div class="control-group checkbox-group">
-                <input type="checkbox" id="showQuasiFermi" checked>
-                <label for="showQuasiFermi">Show Quasi-Fermi Levels</label>
-            </div>
+        </div>
 
-            <div class="control-group checkbox-group">
-                <input type="checkbox" id="showEi" checked>
-                <label for="showEi">Show Intrinsic Level (Ei)</label>
-            </div>
+        <div class="info-panels">
+            <div class="info-panel">
+                <h3>Display Options</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div class="control-group checkbox-group">
+                        <input type="checkbox" id="showQuasiFermi" checked>
+                        <label for="showQuasiFermi">Show Quasi-Fermi Levels</label>
+                    </div>
 
-            <div class="control-group checkbox-group">
-                <input type="checkbox" id="showCalculations" checked>
-                <label for="showCalculations">Show Calculations</label>
+                    <div class="control-group checkbox-group">
+                        <input type="checkbox" id="showEi" checked>
+                        <label for="showEi">Show Intrinsic Level (Ei)</label>
+                    </div>
+
+                    <div class="control-group checkbox-group">
+                        <input type="checkbox" id="showCalculations" checked>
+                        <label for="showCalculations">Show Calculations</label>
+                    </div>
+                </div>
             </div>
         </div>
-        
+
         <div class="info-panels">
             <div class="info-panel">
                 <h3>Varshni Parameters & Results</h3>
