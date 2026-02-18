@@ -69,6 +69,31 @@
             display: flex;
             align-items: center;
         }
+
+        .qfl-mode-section {
+            margin-top: 10px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 10px;
+        }
+
+        .qfl-mode-section label.section-title {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .qfl-mode-options {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .qfl-mode-options label {
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
         
         .checkbox-group input[type="checkbox"] {
             width: 20px;
@@ -323,6 +348,20 @@
                         <input type="checkbox" id="showCalculations" checked>
                         <label for="showCalculations">Show Calculations</label>
                     </div>
+
+                    <div class="control-group qfl-mode-section">
+                        <label class="section-title">Quasi-Fermi Level Mode</label>
+                        <div class="qfl-mode-options">
+                            <label>
+                                <input type="radio" name="qflMode" id="qflDepletion" value="depletion" checked>
+                                Depletion Approximation Only
+                            </label>
+                            <label>
+                                <input type="radio" name="qflMode" id="qflFull" value="full">
+                                Allow E<sub>Fn</sub> &gt; E<sub>c</sub> (Heavy Injection)
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -510,10 +549,11 @@
             const Vbi = Ef_n - Ef_p;
             
             const qV = forwardBias;
+            const qflMode = document.querySelector('input[name="qflMode"]:checked').value;
             const Efn_n = Ef_n;
             const Efp_p = Ef_p;
-            const Efn_p = Ef_p + qV;
-            const Efp_n = Ef_n - qV;
+            const Efn_p = qflMode === 'depletion' ? Math.min(Ef_p + qV, Ec) : Ef_p + qV;
+            const Efp_n = qflMode === 'depletion' ? Math.max(Ef_n - qV, Ev) : Ef_n - qV;
             
             return { Eg, Ev, Ec, Ei, Ef_n, Ef_p, Vbi, ni, Efn_n, Efp_p, Efn_p, Efp_n, kT, mat, temperature, nConc, pConc, forwardBias, showQuasiFermi, showEi };
         }
@@ -1416,6 +1456,13 @@
             update();
         });
 
+        document.querySelectorAll('input[name="qflMode"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                saveState();
+                update();
+            });
+        });
+
         // State persistence functions
         function saveState() {
             const state = {
@@ -1429,7 +1476,8 @@
                 pDopant: document.getElementById('pDopant').value,
                 showQuasiFermi: document.getElementById('showQuasiFermi').checked,
                 showEi: document.getElementById('showEi').checked,
-                showCalculations: document.getElementById('showCalculations').checked
+                showCalculations: document.getElementById('showCalculations').checked,
+                qflMode: document.querySelector('input[name="qflMode"]:checked')?.value || 'depletion'
             };
             localStorage.setItem('pnJunctionState', JSON.stringify(state));
         }
@@ -1491,6 +1539,10 @@
                 }
                 if (state.showCalculations !== undefined) {
                     document.getElementById('showCalculations').checked = state.showCalculations;
+                }
+                if (state.qflMode) {
+                    const radio = document.querySelector(`input[name="qflMode"][value="${state.qflMode}"]`);
+                    if (radio) radio.checked = true;
                 }
             } catch (e) {
                 console.error('Failed to load saved state:', e);
