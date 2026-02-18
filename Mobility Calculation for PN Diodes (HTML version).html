@@ -1,0 +1,208 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PN Junction Mobility Calculator 💡</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 16pt; /* Matches the global 16pt Arial font */
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-top: 20px;
+        }
+        .container {
+            width: 90%;
+            max-width: 800px; /* Limits width */
+            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        h2 {
+            text-align: center;
+            margin-top: 0;
+        }
+
+        /* --- Input Grid (Replaces QGridLayout) --- */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .input-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .input-group input,
+        .input-group select {
+            font-size: 16pt; /* Ensures inputs inherit the font size */
+            font-family: Arial, sans-serif;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .unit-label {
+            font-size: 0.85em;
+            color: #555;
+            margin-top: 4px;
+        }
+
+        /* --- Results Layout (Replaces QHBoxLayout) --- */
+        .results-container {
+            display: flex;
+            justify-content: space-around;
+            gap: 40px; /* Provides spacing */
+        }
+        .result-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Centers the box and labels */
+            text-align: center;
+        }
+        .result-group .title {
+            font-weight: 600;
+        }
+
+        /* --- Result Box (Replicates result_box_base_style) --- */
+        .result-box {
+            border: 2px solid black;
+            padding: 10px;
+            background-color: #FFFFFF;
+            border-radius: 8px;
+            min-width: 150px;
+            text-align: center;
+            margin: 10px 0;
+            
+            /* Replicates result_font (bold) */
+            font-weight: bold;
+            color: black;
+        }
+        
+        /* Replicates the error style (red, non-bold) */
+        .result-box.error {
+            color: red;
+            font-weight: normal; /* Uses main font weight for errors */
+        }
+    </style>
+</head><body><div class="container">
+<h2>PN Junction Mobility Calculator 💡</h2>
+<div class="input-grid">
+<div class="input-group"><label for="na">NA (Acceptor Concentration):</label> <input type="text" id="na" value="1.0e17"> <span class="unit-label">cm⁻³</span></div>
+<div class="input-group"><label for="nd">ND (Donor Concentration):</label> <input type="text" id="nd" value="1.0e17"> <span class="unit-label">cm⁻³</span></div>
+<div class="input-group"><label for="material">Select Semiconductor:</label><select id="material">
+<option value="Si">Si</option>
+<option value="Ge">Ge</option>
+<option value="GaAs">GaAs</option>
+<option value="InGaAs">InGaAs</option>
+</select></div>
+</div>
+<div class="results-container">
+<div class="result-group"><span class="title">Electron Mobility, P-side:</span>
+<div id="un-value" class="result-box">...</div>
+<span class="unit-label">cm²/Vs</span></div>
+<div class="result-group"><span class="title">Hole Mobility, N-side:</span>
+<div id="up-value" class="result-box">...</div>
+<span class="unit-label">cm²/Vs</span></div>
+</div>
+</div>
+<p><script>
+        // --- Store Parameters (from up/un functions) ---
+        const parameters = {
+            'Si': {
+                'n': { muMax: 1410.0, muMin: 92.0,   Nref: 1e17,    Beta: 0.85  },
+                'p': { muMax: 470.0,  muMin: 50.0,   Nref: 1.6e17,  Beta: 0.7   }
+            },
+            'Ge': {
+                'n': { muMax: 4041.0, muMin: -186.0, Nref: 8.85e17, Beta: 0.385 },
+                'p': { muMax: 1979.0, muMin: -98.0,  Nref: 8.2e16,  Beta: 0.45  }
+            },
+            'GaAs': {
+                'n': { muMax: 7942.0, muMin: 228.0,  Nref: 2.01e17, Beta: 0.606 },
+                'p': { muMax: 399.75, muMin: -14.0,  Nref: 6.461e17, Beta: 0.437 }
+            },
+            'InGaAs': {
+                'n': { muMax: 10050.0, muMin: 500.0, Nref: 6.51e17, Beta: 0.72  },
+                'p': { muMax: 500.0,   muMin: 80.0,  Nref: 1.05e16, Beta: 0.77  }
+            }
+        };
+
+        // --- Calculation Functions (Directly translated from Python) ---
+        
+        function un(Nt, semiconductor) {
+            const p = parameters[semiconductor]['n'];
+            if (Nt <= 0) {
+                return p.muMax;
+            }
+            return ((p.muMax - p.muMin) / (1 + Math.pow(Nt / p.Nref, p.Beta))) + p.muMin;
+        }
+
+        function up(Nt, semiconductor) {
+            const p = parameters[semiconductor]['p'];
+            if (Nt <= 0) {
+                return p.muMax;
+            }
+            return ((p.muMax - p.muMin) / (1 + Math.pow(Nt / p.Nref, p.Beta))) + p.muMin;
+        }
+
+        // --- Get references to all the HTML elements ---
+        const naInput = document.getElementById('na');
+        const ndInput = document.getElementById('nd');
+        const materialSelect = document.getElementById('material');
+        const unValueDiv = document.getElementById('un-value');
+        const upValueDiv = document.getElementById('up-value');
+
+        // --- Main Calculation Function (Replicates calculate_mobilities) ---
+        function calculateMobilities() {
+            // Get raw text and selected material
+            const Na_text = naInput.value.trim();
+            const Nd_text = ndInput.value.trim();
+            const selected_semiconductor = materialSelect.value;
+            
+            // Parse text to numbers. Number() is stricter than parseFloat()
+            // and correctly handles "1e" as NaN, similar to Python's float().
+            const Na = Number(Na_text);
+            const Nd = Number(Nd_text);
+
+            // --- Update Electron Mobility (P-side) ---
+            // Check for invalid input (NaN) or an empty string
+            if (isNaN(Na) || Na_text === "") {
+                unValueDiv.textContent = "Invalid Input";
+                unValueDiv.classList.add("error"); // Add 'error' class
+            } else {
+                const mobility_un = un(Na, selected_semiconductor);
+                unValueDiv.textContent = mobility_un.toFixed(2);
+                unValueDiv.classList.remove("error"); // Remove 'error' class
+            }
+
+            // --- Update Hole Mobility (N-side) ---
+            if (isNaN(Nd) || Nd_text === "") {
+                upValueDiv.textContent = "Invalid Input";
+                upValueDiv.classList.add("error");
+            } else {
+                const mobility_up = up(Nd, selected_semiconductor);
+                upValueDiv.textContent = mobility_up.toFixed(2);
+                upValueDiv.classList.remove("error");
+            }
+        }
+
+        // --- Connect Signals (Replaces .connect) ---
+        // 'input' fires on every keystroke, just like 'textChanged'
+        naInput.addEventListener('input', calculateMobilities);
+        ndInput.addEventListener('input', calculateMobilities);
+        
+        // 'change' fires when the dropdown selection is changed
+        materialSelect.addEventListener('change', calculateMobilities);
+
+        // --- Run once on load ---
+        // Call the function immediately to calculate the default values
+        calculateMobilities();
+    </script></p></body></html>
