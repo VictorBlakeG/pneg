@@ -6,6 +6,12 @@
     <title>P-N Junction Fermi Level Simulator</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@latest/dist/chartjs-plugin-annotation.min.js"></script>
+
+    <!-- KaTeX for LaTeX math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
     <style>
         * {
             margin: 0;
@@ -181,17 +187,41 @@
         }
         
         .calc-step .formula {
+            font-size: 1.1rem;
+            text-align: center;
+            padding: 12px;
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            margin: 8px 0;
             color: #1e40af;
             font-weight: 600;
         }
-        
+
         .calc-step .substitution {
+            padding: 8px 12px;
+            margin: 4px 0;
+            background: #fefce8;
+            border-left: 3px solid #eab308;
             color: #374151;
         }
-        
+
         .calc-step .result {
+            padding: 10px 12px;
+            margin: 8px 0;
+            background: #dcfce7;
+            border-left: 4px solid #16a34a;
             color: #059669;
             font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        /* KaTeX font size adjustments */
+        .katex {
+            font-size: 1.1em;
+        }
+
+        .formula .katex {
+            font-size: 1.15em;
         }
         
         .calc-step .label {
@@ -1052,7 +1082,38 @@
                 }
             });
         }
-        
+
+        // LaTeX helper functions for KaTeX rendering
+        function tex(latex) {
+            // Inline math: wraps in $ delimiters
+            return `$${latex}$`;
+        }
+
+        function texBlock(latex) {
+            // Display math: wraps in $$ delimiters
+            return `$$${latex}$$`;
+        }
+
+        function renderMath(elementId) {
+            // Renders all math in an element using KaTeX auto-render
+            // Wait a tick to ensure DOM is updated
+            setTimeout(() => {
+                if (typeof renderMathInElement !== 'undefined') {
+                    const element = document.getElementById(elementId);
+                    if (element) {
+                        renderMathInElement(element, {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false}
+                            ],
+                            throwOnError: false,
+                            trust: true
+                        });
+                    }
+                }
+            }, 10);
+        }
+
         function updateCalculations(calc) {
             const showCalc = document.getElementById('showCalculations').checked;
             const section = document.getElementById('calculationsSection');
@@ -1127,9 +1188,9 @@
             // Step 3.1: Thermal voltage
             html += `<h4>3.1 Thermal Voltage</h4>
                 <div class="calc-step">
-                    <div class="formula">kT = k<sub>B</sub> · T</div>
-                    <div class="substitution">kT = (8.617 × 10⁻⁵ eV/K) · (${T} K)</div>
-                    <div class="result">kT = ${fmt5(calc.kT)} eV</div>
+                    <div class="formula">${texBlock('kT = k_B \\cdot T')}</div>
+                    <div class="substitution">${tex(`kT = (8.617 \\times 10^{-5} \\text{ eV/K}) \\cdot (${T} \\text{ K})`)}</div>
+                    <div class="result">${tex(`kT = ${fmt5(calc.kT)} \\text{ eV}`)}</div>
                 </div>`;
             
             // Step 3.2: Bandgap (Varshni)
@@ -1137,11 +1198,11 @@
             const TplusBeta = T + mat.beta;
             html += `<h4>3.2 Temperature-Dependent Bandgap (Varshni Equation)</h4>
                 <div class="calc-step">
-                    <div class="formula">E<sub>g</sub>(T) = E<sub>g</sub>(0) − α·T² / (T + β)</div>
-                    <div class="substitution">E<sub>g</sub>(${T}) = ${mat.Eg0} − (${mat.alpha.toExponential(2)})(${T})² / (${T} + ${mat.beta})</div>
-                    <div class="substitution">E<sub>g</sub>(${T}) = ${mat.Eg0} − ${fmtE(alphaT2)} / ${TplusBeta}</div>
-                    <div class="substitution">E<sub>g</sub>(${T}) = ${mat.Eg0} − ${fmt4(alphaT2 / TplusBeta)}</div>
-                    <div class="result">E<sub>g</sub>(${T}K) = ${fmt4(calc.Eg)} eV</div>
+                    <div class="formula">${texBlock('E_g(T) = E_g(0) - \\frac{\\alpha T^2}{T + \\beta}')}</div>
+                    <div class="substitution">${tex(`E_g(${T}) = ${mat.Eg0} - \\frac{(${mat.alpha.toExponential(2)})(${T})^2}{${T} + ${mat.beta}}`)}</div>
+                    <div class="substitution">${tex(`E_g(${T}) = ${mat.Eg0} - \\frac{${fmtE(alphaT2)}}{${TplusBeta}}`)}</div>
+                    <div class="substitution">${tex(`E_g(${T}) = ${mat.Eg0} - ${fmt4(alphaT2 / TplusBeta)}`)}</div>
+                    <div class="result">${tex(`E_g(${T}\\text{K}) = ${fmt4(calc.Eg)} \\text{ eV}`)}</div>
                 </div>`;
             
             // Step 3.3: Temperature-scaled density of states
@@ -1149,16 +1210,16 @@
             const Tratio32 = Math.pow(Tratio, 1.5);
             html += `<h4>3.3 Temperature-Scaled Effective Density of States</h4>
                 <div class="calc-step">
-                    <div class="formula">N<sub>c</sub>(T) = N<sub>c</sub>(300K) · (T/300)<sup>3/2</sup></div>
-                    <div class="substitution">N<sub>c</sub>(${T}) = (${fmtE2(mat.Nc)}) · (${T}/300)<sup>3/2</sup></div>
-                    <div class="substitution">N<sub>c</sub>(${T}) = (${fmtE2(mat.Nc)}) · (${fmt4(Tratio)})<sup>3/2</sup></div>
-                    <div class="substitution">N<sub>c</sub>(${T}) = (${fmtE2(mat.Nc)}) · ${fmt4(Tratio32)}</div>
-                    <div class="result">N<sub>c</sub>(${T}K) = ${fmtE2(Nc_T)} cm⁻³</div>
+                    <div class="formula">${texBlock('N_c(T) = N_c(300\\text{K}) \\cdot \\left(\\frac{T}{300}\\right)^{3/2}')}</div>
+                    <div class="substitution">${tex(`N_c(${T}) = (${fmtE2(mat.Nc)}) \\cdot \\left(\\frac{${T}}{300}\\right)^{3/2}`)}</div>
+                    <div class="substitution">${tex(`N_c(${T}) = (${fmtE2(mat.Nc)}) \\cdot (${fmt4(Tratio)})^{3/2}`)}</div>
+                    <div class="substitution">${tex(`N_c(${T}) = (${fmtE2(mat.Nc)}) \\cdot ${fmt4(Tratio32)}`)}</div>
+                    <div class="result">${tex(`N_c(${T}\\text{K}) = ${fmtE2(Nc_T)} \\text{ cm}^{-3}`)}</div>
                 </div>
                 <div class="calc-step">
-                    <div class="formula">N<sub>v</sub>(T) = N<sub>v</sub>(300K) · (T/300)<sup>3/2</sup></div>
-                    <div class="substitution">N<sub>v</sub>(${T}) = (${fmtE2(mat.Nv)}) · ${fmt4(Tratio32)}</div>
-                    <div class="result">N<sub>v</sub>(${T}K) = ${fmtE2(Nv_T)} cm⁻³</div>
+                    <div class="formula">${texBlock('N_v(T) = N_v(300\\text{K}) \\cdot \\left(\\frac{T}{300}\\right)^{3/2}')}</div>
+                    <div class="substitution">${tex(`N_v(${T}) = (${fmtE2(mat.Nv)}) \\cdot ${fmt4(Tratio32)}`)}</div>
+                    <div class="result">${tex(`N_v(${T}\\text{K}) = ${fmtE2(Nv_T)} \\text{ cm}^{-3}`)}</div>
                 </div>`;
             
             // Step 3.4: Intrinsic carrier concentration
@@ -1167,22 +1228,22 @@
             const expVal = Math.exp(expArg);
             html += `<h4>3.4 Intrinsic Carrier Concentration</h4>
                 <div class="calc-step">
-                    <div class="formula">n<sub>i</sub> = √(N<sub>c</sub> · N<sub>v</sub>) · exp(−E<sub>g</sub> / 2kT)</div>
-                    <div class="substitution">n<sub>i</sub> = √((${fmtE2(Nc_T)})(${fmtE2(Nv_T)})) · exp(−${fmt4(calc.Eg)} / (2 × ${fmt5(calc.kT)}))</div>
-                    <div class="substitution">n<sub>i</sub> = (${fmtE2(sqrtNcNv)}) · exp(${fmt4(expArg)})</div>
-                    <div class="substitution">n<sub>i</sub> = (${fmtE2(sqrtNcNv)}) · (${fmtE(expVal)})</div>
-                    <div class="result">n<sub>i</sub> = ${fmtE2(calc.ni)} cm⁻³</div>
+                    <div class="formula">${texBlock('n_i = \\sqrt{N_c \\cdot N_v} \\cdot \\exp\\left(-\\frac{E_g}{2kT}\\right)')}</div>
+                    <div class="substitution">${tex(`n_i = \\sqrt{(${fmtE2(Nc_T)})(${fmtE2(Nv_T)})} \\cdot \\exp\\left(-\\frac{${fmt4(calc.Eg)}}{2 \\times ${fmt5(calc.kT)}}\\right)`)}</div>
+                    <div class="substitution">${tex(`n_i = (${fmtE2(sqrtNcNv)}) \\cdot \\exp(${fmt4(expArg)})`)}</div>
+                    <div class="substitution">${tex(`n_i = (${fmtE2(sqrtNcNv)}) \\cdot (${fmtE(expVal)})`)}</div>
+                    <div class="result">${tex(`n_i = ${fmtE2(calc.ni)} \\text{ cm}^{-3}`)}</div>
                 </div>`;
             
             // Step 3.5: Energy band references
             html += `<h4>3.5 Energy Band Reference Levels</h4>
                 <div class="calc-step">
                     <div class="label">Setting the valence band edge as the energy reference:</div>
-                    <div class="result">E<sub>v</sub> = ${fmt4(calc.Ev)} eV &nbsp; (reference)</div>
-                    <div class="formula">E<sub>c</sub> = E<sub>v</sub> + E<sub>g</sub></div>
-                    <div class="result">E<sub>c</sub> = ${fmt4(calc.Ev)} + ${fmt4(calc.Eg)} = ${fmt4(calc.Ec)} eV</div>
-                    <div class="formula">E<sub>i</sub> = E<sub>g</sub> / 2</div>
-                    <div class="result">E<sub>i</sub> = ${fmt4(calc.Eg)} / 2 = ${fmt4(calc.Ei)} eV</div>
+                    <div class="result">${tex(`E_v = ${fmt4(calc.Ev)} \\text{ eV}`)}&nbsp; (reference)</div>
+                    <div class="formula">${texBlock('E_c = E_v + E_g')}</div>
+                    <div class="result">${tex(`E_c = ${fmt4(calc.Ev)} + ${fmt4(calc.Eg)} = ${fmt4(calc.Ec)} \\text{ eV}`)}</div>
+                    <div class="formula">${texBlock('E_i = E_g / 2')}</div>
+                    <div class="result">${tex(`E_i = ${fmt4(calc.Eg)} / 2 = ${fmt4(calc.Ei)} \\text{ eV}`)}</div>
                 </div>`;
             
             // Step 3.6: Fermi levels
@@ -1193,37 +1254,37 @@
             html += `<h4>3.6 Fermi Level Positions</h4>
                 <div class="calc-step">
                     <div class="label">N-side Fermi level (from conduction band):</div>
-                    <div class="formula">E<sub>F,n</sub> = E<sub>c</sub> − kT · ln(N<sub>c</sub>(T) / N<sub>D</sub>)</div>
-                    <div class="substitution">E<sub>F,n</sub> = ${fmt4(calc.Ec)} − (${fmt5(calc.kT)}) · ln(${fmtE2(Nc_T)} / ${fmtE2(calc.nConc)})</div>
-                    <div class="substitution">E<sub>F,n</sub> = ${fmt4(calc.Ec)} − (${fmt5(calc.kT)}) · ln(${fmtE(logArgN)})</div>
-                    <div class="substitution">E<sub>F,n</sub> = ${fmt4(calc.Ec)} − (${fmt5(calc.kT)}) · (${fmt4(lnN)})</div>
-                    <div class="substitution">E<sub>F,n</sub> = ${fmt4(calc.Ec)} − ${fmt4(calc.kT * lnN)}</div>
-                    <div class="result">E<sub>F,n</sub> = ${fmt4(calc.Ef_n)} eV</div>
+                    <div class="formula">${texBlock('E_{F,n} = E_c - kT \\cdot \\ln\\left(\\frac{N_c(T)}{N_D}\\right)')}</div>
+                    <div class="substitution">${tex(`E_{F,n} = ${fmt4(calc.Ec)} - (${fmt5(calc.kT)}) \\cdot \\ln\\left(\\frac{${fmtE2(Nc_T)}}{${fmtE2(calc.nConc)}}\\right)`)}</div>
+                    <div class="substitution">${tex(`E_{F,n} = ${fmt4(calc.Ec)} - (${fmt5(calc.kT)}) \\cdot \\ln(${fmtE(logArgN)})`)}</div>
+                    <div class="substitution">${tex(`E_{F,n} = ${fmt4(calc.Ec)} - (${fmt5(calc.kT)}) \\cdot (${fmt4(lnN)})`)}</div>
+                    <div class="substitution">${tex(`E_{F,n} = ${fmt4(calc.Ec)} - ${fmt4(calc.kT * lnN)}`)}</div>
+                    <div class="result">${tex(`E_{F,n} = ${fmt4(calc.Ef_n)} \\text{ eV}`)}</div>
                 </div>
                 <div class="calc-step">
                     <div class="label">P-side Fermi level (from valence band):</div>
-                    <div class="formula">E<sub>F,p</sub> = E<sub>v</sub> + kT · ln(N<sub>v</sub>(T) / N<sub>A</sub>)</div>
-                    <div class="substitution">E<sub>F,p</sub> = ${fmt4(calc.Ev)} + (${fmt5(calc.kT)}) · ln(${fmtE2(Nv_T)} / ${fmtE2(calc.pConc)})</div>
-                    <div class="substitution">E<sub>F,p</sub> = ${fmt4(calc.Ev)} + (${fmt5(calc.kT)}) · ln(${fmtE(logArgP)})</div>
-                    <div class="substitution">E<sub>F,p</sub> = ${fmt4(calc.Ev)} + (${fmt5(calc.kT)}) · (${fmt4(lnP)})</div>
-                    <div class="substitution">E<sub>F,p</sub> = ${fmt4(calc.Ev)} + ${fmt4(calc.kT * lnP)}</div>
-                    <div class="result">E<sub>F,p</sub> = ${fmt4(calc.Ef_p)} eV</div>
+                    <div class="formula">${texBlock('E_{F,p} = E_v + kT \\cdot \\ln\\left(\\frac{N_v(T)}{N_A}\\right)')}</div>
+                    <div class="substitution">${tex(`E_{F,p} = ${fmt4(calc.Ev)} + (${fmt5(calc.kT)}) \\cdot \\ln\\left(\\frac{${fmtE2(Nv_T)}}{${fmtE2(calc.pConc)}}\\right)`)}</div>
+                    <div class="substitution">${tex(`E_{F,p} = ${fmt4(calc.Ev)} + (${fmt5(calc.kT)}) \\cdot \\ln(${fmtE(logArgP)})`)}</div>
+                    <div class="substitution">${tex(`E_{F,p} = ${fmt4(calc.Ev)} + (${fmt5(calc.kT)}) \\cdot (${fmt4(lnP)})`)}</div>
+                    <div class="substitution">${tex(`E_{F,p} = ${fmt4(calc.Ev)} + ${fmt4(calc.kT * lnP)}`)}</div>
+                    <div class="result">${tex(`E_{F,p} = ${fmt4(calc.Ef_p)} \\text{ eV}`)}</div>
                 </div>`;
             
             // Step 3.7: Built-in potential
             html += `<h4>3.7 Built-in Potential</h4>
                 <div class="calc-step">
-                    <div class="formula">V<sub>bi</sub> = E<sub>F,n</sub> − E<sub>F,p</sub></div>
-                    <div class="substitution">V<sub>bi</sub> = ${fmt4(calc.Ef_n)} − ${fmt4(calc.Ef_p)}</div>
-                    <div class="result">V<sub>bi</sub> = ${fmt4(calc.Vbi)} V</div>
+                    <div class="formula">${texBlock('V_{bi} = E_{F,n} - E_{F,p}')}</div>
+                    <div class="substitution">${tex(`V_{bi} = ${fmt4(calc.Ef_n)} - ${fmt4(calc.Ef_p)}`)}</div>
+                    <div class="result">${tex(`V_{bi} = ${fmt4(calc.Vbi)} \\text{ V}`)}</div>
                 </div>`;
-            
+
             // Step 3.8: Effective built-in potential under bias
             html += `<h4>3.8 Effective Built-in Potential Under Bias</h4>
                 <div class="calc-step">
-                    <div class="formula">V<sub>bi,eff</sub> = V<sub>bi</sub> − V<sub>a</sub></div>
-                    <div class="substitution">V<sub>bi,eff</sub> = ${fmt4(calc.Vbi)} − ${fmt4(calc.forwardBias)}</div>
-                    <div class="result">V<sub>bi,eff</sub> = ${fmt4(dep.Vbi_eff)} V</div>
+                    <div class="formula">${texBlock('V_{bi,eff} = V_{bi} - V_a')}</div>
+                    <div class="substitution">${tex(`V_{bi,eff} = ${fmt4(calc.Vbi)} - ${fmt4(calc.forwardBias)}`)}</div>
+                    <div class="result">${tex(`V_{bi,eff} = ${fmt4(dep.Vbi_eff)} \\text{ V}`)}</div>
                 </div>`;
             
             // Step 3.9: Depletion region
@@ -1233,71 +1294,71 @@
             html += `<h4>3.9 Depletion Region Width</h4>
                 <div class="calc-step">
                     <div class="label">Convert doping to SI units (m⁻³):</div>
-                    <div class="substitution">N<sub>D</sub> = ${fmtE2(calc.nConc)} cm⁻³ = ${fmtE2(ND_m3)} m⁻³</div>
-                    <div class="substitution">N<sub>A</sub> = ${fmtE2(calc.pConc)} cm⁻³ = ${fmtE2(NA_m3)} m⁻³</div>
+                    <div class="substitution">${tex(`N_D = ${fmtE2(calc.nConc)} \\text{ cm}^{-3} = ${fmtE2(ND_m3)} \\text{ m}^{-3}`)}</div>
+                    <div class="substitution">${tex(`N_A = ${fmtE2(calc.pConc)} \\text{ cm}^{-3} = ${fmtE2(NA_m3)} \\text{ m}^{-3}`)}</div>
                 </div>
                 <div class="calc-step">
-                    <div class="formula">W = √( 2ε · V<sub>bi,eff</sub> / q · (1/N<sub>A</sub> + 1/N<sub>D</sub>) )</div>
-                    <div class="substitution">W = √( 2 · (${fmtE(epsVal)}) · (${fmt4(dep.Vbi_eff)}) / (${fmtE(q)}) · (1/${fmtE2(NA_m3)} + 1/${fmtE2(ND_m3)}) )</div>
-                    <div class="substitution">W = √( ${fmtE(2 * epsVal * dep.Vbi_eff / q)} · ${fmtE(invSum)} )</div>
-                    <div class="substitution">W = √( ${fmtE(2 * epsVal * dep.Vbi_eff / q * invSum)} )</div>
-                    <div class="result">W = ${fmtE(dep.W)} m = ${fmt4(dep.W * 1e6)} μm</div>
+                    <div class="formula">${texBlock('W = \\sqrt{\\frac{2\\varepsilon \\cdot V_{bi,eff}}{q} \\cdot \\left(\\frac{1}{N_A} + \\frac{1}{N_D}\\right)}')}</div>
+                    <div class="substitution">${tex(`W = \\sqrt{\\frac{2 \\cdot (${fmtE(epsVal)}) \\cdot (${fmt4(dep.Vbi_eff)})}{(${fmtE(q)})} \\cdot \\left(\\frac{1}{${fmtE2(NA_m3)}} + \\frac{1}{${fmtE2(ND_m3)}}\\right)}`)}</div>
+                    <div class="substitution">${tex(`W = \\sqrt{${fmtE(2 * epsVal * dep.Vbi_eff / q)} \\cdot ${fmtE(invSum)}}`)}</div>
+                    <div class="substitution">${tex(`W = \\sqrt{${fmtE(2 * epsVal * dep.Vbi_eff / q * invSum)}}`)}</div>
+                    <div class="result">${tex(`W = ${fmtE(dep.W)} \\text{ m} = ${fmt4(dep.W * 1e6)} \\text{ μm}`)}</div>
                 </div>`;
-            
+
             // Step 3.10: Depletion partitioning
             html += `<h4>3.10 Depletion Width Partitioning</h4>
                 <div class="calc-step">
                     <div class="label">Depletion extends further into the lighter-doped side:</div>
-                    <div class="formula">x<sub>p</sub> = W · N<sub>D</sub> / (N<sub>A</sub> + N<sub>D</sub>)</div>
-                    <div class="substitution">x<sub>p</sub> = (${fmtE(dep.W)}) · (${fmtE2(ND_m3)}) / (${fmtE2(NA_m3)} + ${fmtE2(ND_m3)})</div>
-                    <div class="substitution">x<sub>p</sub> = (${fmtE(dep.W)}) · ${fmt4(ND_m3 / (NA_m3 + ND_m3))}</div>
-                    <div class="result">x<sub>p</sub> = ${fmtE(dep.xp)} m = ${fmt4(dep.xp * 1e6)} μm</div>
+                    <div class="formula">${texBlock('x_p = W \\cdot \\frac{N_D}{N_A + N_D}')}</div>
+                    <div class="substitution">${tex(`x_p = (${fmtE(dep.W)}) \\cdot \\frac{${fmtE2(ND_m3)}}{${fmtE2(NA_m3)} + ${fmtE2(ND_m3)}}`)}</div>
+                    <div class="substitution">${tex(`x_p = (${fmtE(dep.W)}) \\cdot ${fmt4(ND_m3 / (NA_m3 + ND_m3))}`)}</div>
+                    <div class="result">${tex(`x_p = ${fmtE(dep.xp)} \\text{ m} = ${fmt4(dep.xp * 1e6)} \\text{ μm}`)}</div>
                 </div>
                 <div class="calc-step">
-                    <div class="formula">x<sub>n</sub> = W · N<sub>A</sub> / (N<sub>A</sub> + N<sub>D</sub>)</div>
-                    <div class="substitution">x<sub>n</sub> = (${fmtE(dep.W)}) · (${fmtE2(NA_m3)}) / (${fmtE2(NA_m3)} + ${fmtE2(ND_m3)})</div>
-                    <div class="substitution">x<sub>n</sub> = (${fmtE(dep.W)}) · ${fmt4(NA_m3 / (NA_m3 + ND_m3))}</div>
-                    <div class="result">x<sub>n</sub> = ${fmtE(dep.xn)} m = ${fmt4(dep.xn * 1e6)} μm</div>
+                    <div class="formula">${texBlock('x_n = W \\cdot \\frac{N_A}{N_A + N_D}')}</div>
+                    <div class="substitution">${tex(`x_n = (${fmtE(dep.W)}) \\cdot \\frac{${fmtE2(NA_m3)}}{${fmtE2(NA_m3)} + ${fmtE2(ND_m3)}}`)}</div>
+                    <div class="substitution">${tex(`x_n = (${fmtE(dep.W)}) \\cdot ${fmt4(NA_m3 / (NA_m3 + ND_m3))}`)}</div>
+                    <div class="result">${tex(`x_n = ${fmtE(dep.xn)} \\text{ m} = ${fmt4(dep.xn * 1e6)} \\text{ μm}`)}</div>
                 </div>`;
             
             // Step 3.11: Peak electric field
             html += `<h4>3.11 Peak Electric Field</h4>
                 <div class="calc-step">
-                    <div class="formula">E<sub>max</sub> = q · N<sub>A</sub> · x<sub>p</sub> / ε</div>
-                    <div class="substitution">E<sub>max</sub> = (${fmtE(q)}) · (${fmtE2(NA_m3)}) · (${fmtE(dep.xp)}) / (${fmtE(epsVal)})</div>
-                    <div class="result">E<sub>max</sub> = ${fmtE(dep.E_max)} V/m = ${fmtE2(dep.E_max / 100)} V/cm</div>
+                    <div class="formula">${texBlock('E_{max} = \\frac{q \\cdot N_A \\cdot x_p}{\\varepsilon}')}</div>
+                    <div class="substitution">${tex(`E_{max} = \\frac{(${fmtE(q)}) \\cdot (${fmtE2(NA_m3)}) \\cdot (${fmtE(dep.xp)})}{(${fmtE(epsVal)})}`)}</div>
+                    <div class="result">${tex(`E_{max} = ${fmtE(dep.E_max)} \\text{ V/m} = ${fmtE2(dep.E_max / 100)} \\text{ V/cm}`)}</div>
                 </div>
                 <div class="calc-step">
-                    <div class="label">Verification via N<sub>D</sub> side:</div>
-                    <div class="formula">E<sub>max</sub> = q · N<sub>D</sub> · x<sub>n</sub> / ε</div>
-                    <div class="substitution">E<sub>max</sub> = (${fmtE(q)}) · (${fmtE2(ND_m3)}) · (${fmtE(dep.xn)}) / (${fmtE(epsVal)})</div>
-                    <div class="result">E<sub>max</sub> = ${fmtE(q * ND_m3 * dep.xn / epsVal)} V/m ✓</div>
+                    <div class="label">Verification via ${tex('N_D')} side:</div>
+                    <div class="formula">${texBlock('E_{max} = \\frac{q \\cdot N_D \\cdot x_n}{\\varepsilon}')}</div>
+                    <div class="substitution">${tex(`E_{max} = \\frac{(${fmtE(q)}) \\cdot (${fmtE2(ND_m3)}) \\cdot (${fmtE(dep.xn)})}{(${fmtE(epsVal)})}`)}</div>
+                    <div class="result">${tex(`E_{max} = ${fmtE(q * ND_m3 * dep.xn / epsVal)} \\text{ V/m}`)} ✓</div>
                 </div>`;
             
             // Step 3.12: Electrostatic potential profile
             html += `<h4>3.12 Electrostatic Potential Profile (Depletion Approximation)</h4>
                 <div class="calc-step">
-                    <div class="label">P-side depletion (−x<sub>p</sub> ≤ x ≤ 0):</div>
-                    <div class="formula">φ(x) = q·N<sub>A</sub> / (2ε) · (x + x<sub>p</sub>)²</div>
-                    <div class="label" style="margin-top: 8px;">N-side depletion (0 ≤ x ≤ x<sub>n</sub>):</div>
-                    <div class="formula">φ(x) = V<sub>bi,eff</sub> − q·N<sub>D</sub> / (2ε) · (x − x<sub>n</sub>)²</div>
+                    <div class="label">P-side depletion ${tex('(-x_p \\leq x \\leq 0)')}:</div>
+                    <div class="formula">${texBlock('\\phi(x) = \\frac{q \\cdot N_A}{2\\varepsilon} \\cdot (x + x_p)^2')}</div>
+                    <div class="label" style="margin-top: 8px;">N-side depletion ${tex('(0 \\leq x \\leq x_n)')}:</div>
+                    <div class="formula">${texBlock('\\phi(x) = V_{bi,eff} - \\frac{q \\cdot N_D}{2\\varepsilon} \\cdot (x - x_n)^2')}</div>
                     <div class="label" style="margin-top: 8px;">Neutral regions:</div>
-                    <div class="formula">φ(x) = 0 &nbsp; for x &lt; −x<sub>p</sub></div>
-                    <div class="formula">φ(x) = V<sub>bi,eff</sub> &nbsp; for x &gt; x<sub>n</sub></div>
+                    <div class="formula">${tex('\\phi(x) = 0 \\quad \\text{for } x < -x_p')}</div>
+                    <div class="formula">${tex('\\phi(x) = V_{bi,eff} \\quad \\text{for } x > x_n')}</div>
                 </div>`;
-            
+
             // Step 3.13: Electric field profile
             html += `<h4>3.13 Electric Field Profile (Depletion Approximation)</h4>
                 <div class="calc-step">
-                    <div class="label">P-side depletion (−x<sub>p</sub> ≤ x ≤ 0):</div>
-                    <div class="formula">E(x) = −q·N<sub>A</sub>/ε · (x + x<sub>p</sub>)</div>
-                    <div class="label" style="margin-top: 8px;">N-side depletion (0 ≤ x ≤ x<sub>n</sub>):</div>
-                    <div class="formula">E(x) = q·N<sub>D</sub>/ε · (x − x<sub>n</sub>)</div>
+                    <div class="label">P-side depletion ${tex('(-x_p \\leq x \\leq 0)')}:</div>
+                    <div class="formula">${texBlock('E(x) = -\\frac{q \\cdot N_A}{\\varepsilon} \\cdot (x + x_p)')}</div>
+                    <div class="label" style="margin-top: 8px;">N-side depletion ${tex('(0 \\leq x \\leq x_n)')}:</div>
+                    <div class="formula">${texBlock('E(x) = \\frac{q \\cdot N_D}{\\varepsilon} \\cdot (x - x_n)')}</div>
                     <div class="label" style="margin-top: 8px;">Neutral regions:</div>
-                    <div class="formula">E(x) = 0 &nbsp; for |x| outside depletion region</div>
-                    <div class="label" style="margin-top: 8px;">At the junction (x = 0):</div>
-                    <div class="substitution">E(0) = −q·N<sub>A</sub>·x<sub>p</sub>/ε = −${fmtE(dep.E_max)} V/m</div>
-                    <div class="result">|E<sub>max</sub>| = ${fmtE2(dep.E_max)} V/m = ${fmtE2(dep.E_max / 100)} V/cm</div>
+                    <div class="formula">${tex('E(x) = 0 \\quad \\text{for } |x| \\text{ outside depletion region}')}</div>
+                    <div class="label" style="margin-top: 8px;">At the junction ${tex('(x = 0)')}:</div>
+                    <div class="substitution">${tex(`E(0) = -\\frac{q \\cdot N_A \\cdot x_p}{\\varepsilon} = -${fmtE(dep.E_max)} \\text{ V/m}`)}</div>
+                    <div class="result">${tex(`|E_{max}| = ${fmtE2(dep.E_max)} \\text{ V/m} = ${fmtE2(dep.E_max / 100)} \\text{ V/cm}`)}</div>
                 </div>`;
             
             // Step 3.14: Quasi-Fermi levels (if enabled)
@@ -1305,28 +1366,31 @@
                 html += `<hr class="calc-divider">
                     <h4>3.14 Quasi-Fermi Level Splitting Under Forward Bias</h4>
                     <div class="calc-step">
-                        <div class="label">Under forward bias V<sub>a</sub> = ${fmt4(calc.forwardBias)} V, the Fermi level splits into separate quasi-Fermi levels for electrons and holes:</div>
-                        <div class="formula" style="margin-top: 8px;">E<sub>Fn</sub> − E<sub>Fp</sub> = qV<sub>a</sub> = ${fmt4(calc.forwardBias)} eV</div>
+                        <div class="label">Under forward bias ${tex(`V_a = ${fmt4(calc.forwardBias)} \\text{ V}`)}, the Fermi level splits into separate quasi-Fermi levels for electrons and holes:</div>
+                        <div class="formula" style="margin-top: 8px;">${texBlock(`E_{Fn} - E_{Fp} = qV_a = ${fmt4(calc.forwardBias)} \\text{ eV}`)}</div>
                     </div>
                     <div class="calc-step">
                         <div class="label">On the n-side (majority electrons):</div>
-                        <div class="formula">E<sub>Fn</sub> (n-side) = E<sub>F,n</sub> = ${fmt4(calc.Efn_n)} eV</div>
-                        <div class="formula">E<sub>Fp</sub> (n-side) = E<sub>F,n</sub> − qV<sub>a</sub></div>
-                        <div class="substitution">E<sub>Fp</sub> (n-side) = ${fmt4(calc.Ef_n)} − ${fmt4(calc.forwardBias)}</div>
-                        <div class="result">E<sub>Fp</sub> (n-side) = ${fmt4(calc.Efp_n)} eV</div>
+                        <div class="formula">${tex(`E_{Fn}(\\text{n-side}) = E_{F,n} = ${fmt4(calc.Efn_n)} \\text{ eV}`)}</div>
+                        <div class="formula">${texBlock('E_{Fp}(\\text{n-side}) = E_{F,n} - qV_a')}</div>
+                        <div class="substitution">${tex(`E_{Fp}(\\text{n-side}) = ${fmt4(calc.Ef_n)} - ${fmt4(calc.forwardBias)}`)}</div>
+                        <div class="result">${tex(`E_{Fp}(\\text{n-side}) = ${fmt4(calc.Efp_n)} \\text{ eV}`)}</div>
                     </div>
                     <div class="calc-step">
                         <div class="label">On the p-side (majority holes):</div>
-                        <div class="formula">E<sub>Fp</sub> (p-side) = E<sub>F,p</sub> = ${fmt4(calc.Efp_p)} eV</div>
-                        <div class="formula">E<sub>Fn</sub> (p-side) = E<sub>F,p</sub> + qV<sub>a</sub></div>
-                        <div class="substitution">E<sub>Fn</sub> (p-side) = ${fmt4(calc.Ef_p)} + ${fmt4(calc.forwardBias)}</div>
-                        <div class="result">E<sub>Fn</sub> (p-side) = ${fmt4(calc.Efn_p)} eV</div>
+                        <div class="formula">${tex(`E_{Fp}(\\text{p-side}) = E_{F,p} = ${fmt4(calc.Efp_p)} \\text{ eV}`)}</div>
+                        <div class="formula">${texBlock('E_{Fn}(\\text{p-side}) = E_{F,p} + qV_a')}</div>
+                        <div class="substitution">${tex(`E_{Fn}(\\text{p-side}) = ${fmt4(calc.Ef_p)} + ${fmt4(calc.forwardBias)}`)}</div>
+                        <div class="result">${tex(`E_{Fn}(\\text{p-side}) = ${fmt4(calc.Efn_p)} \\text{ eV}`)}</div>
                     </div>`;
             }
             
             html += `</div>`; // close calc-section
-            
+
             document.getElementById('calculationsContent').innerHTML = html;
+
+            // Render all LaTeX math in the calculations section
+            renderMath('calculationsContent');
         }
         
         function update() {
