@@ -254,6 +254,76 @@
             margin: 20px 0;
         }
         
+        /* Dark mode overrides */
+        body.dark-mode {
+            background-color: #050a14;
+            color: #c8d8f0;
+        }
+        body.dark-mode h1 { color: #e0e8f0; }
+        body.dark-mode .controls {
+            background: #080f1e;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+        body.dark-mode label { color: #c8d8f0; }
+        body.dark-mode select, body.dark-mode input[type="range"] {
+            background: #0a1428;
+            border-color: #1a3a6a;
+            color: #c8d8f0;
+        }
+        body.dark-mode .info-panel {
+            background: #080f1e;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+        body.dark-mode .info-panel h3 { color: #7ab8f8; }
+        body.dark-mode .info-label { color: #7ab8f8; }
+        body.dark-mode .chart-container {
+            background: #080f1e;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+        body.dark-mode .chart-info { color: #7ab8f8; }
+        body.dark-mode .help-panel {
+            background: #0a1a2e;
+            border-color: #1a3a6a;
+        }
+        body.dark-mode .help-panel h4 { color: #7ab8f8; }
+        body.dark-mode .help-panel ul { color: #c8d8f0; }
+        body.dark-mode .calc-section h3 {
+            color: #7ab8f8;
+            border-bottom-color: #2a7fff;
+        }
+        body.dark-mode .calc-section h4 { color: #c8d8f0; }
+        body.dark-mode .calc-step {
+            background: #0a1428;
+            border-left-color: #2a7fff;
+        }
+        body.dark-mode .calc-step .formula { color: #7ab8f8; }
+        body.dark-mode .calc-step .substitution { color: #c8d8f0; }
+        body.dark-mode .calc-step .result { color: #00ff88; }
+        body.dark-mode .calc-step .label { color: #7ab8f8; }
+        body.dark-mode .settings-table td, body.dark-mode .constants-table td {
+            border-bottom-color: #1a2a44;
+        }
+        body.dark-mode .settings-table td:first-child, body.dark-mode .constants-table td:first-child { color: #7ab8f8; }
+        body.dark-mode .settings-table td:last-child, body.dark-mode .constants-table td:last-child { color: #c8d8f0; }
+        body.dark-mode .calc-divider { border-top-color: #1a2a44; }
+        body.dark-mode .qfl-mode-section { border-top-color: #1a2a44; }
+        body.dark-mode .info-grid { color: #c8d8f0; }
+
+        #theme-toggle {
+            background: transparent;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body.dark-mode #theme-toggle {
+            border-color: #1a3a6a;
+            color: #7ab8f8;
+        }
+
         @media (max-width: 768px) {
             .info-panels {
                 grid-template-columns: 1fr;
@@ -267,7 +337,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>P-N Junction Fermi Level Simulator</h1>
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:30px;">
+            <h1 style="margin-bottom:0">P-N Junction Fermi Level Simulator</h1>
+            <button id="theme-toggle">☾ Dark</button>
+        </div>
         
         <div class="controls">
             <div class="control-group">
@@ -770,7 +843,7 @@
                         x: {
                             type: 'linear',
                             title: { display: true, text: 'Position (μm)' },
-                            grid: { color: '#e5e7eb' },
+                            grid: { color: (typeof darkMode!=='undefined'&&darkMode)?'#1a2a44':'#e5e7eb' },
                             ticks: {
                                 callback: function(value) {
                                     if (Math.abs(value) < xp_um * 0.05) return '0';
@@ -780,7 +853,7 @@
                         },
                         y: {
                             title: { display: true, text: 'Potential φ (V)' },
-                            grid: { color: '#e5e7eb' },
+                            grid: { color: (typeof darkMode!=='undefined'&&darkMode)?'#1a2a44':'#e5e7eb' },
                             beginAtZero: true
                         }
                     }
@@ -826,7 +899,7 @@
                         x: {
                             type: 'linear',
                             title: { display: true, text: 'Position (μm)' },
-                            grid: { color: '#e5e7eb' },
+                            grid: { color: (typeof darkMode!=='undefined'&&darkMode)?'#1a2a44':'#e5e7eb' },
                             ticks: {
                                 callback: function(value) {
                                     if (Math.abs(value) < xp_um * 0.05) return '0';
@@ -836,7 +909,7 @@
                         },
                         y: {
                             title: { display: true, text: efieldLabel },
-                            grid: { color: '#e5e7eb' }
+                            grid: { color: (typeof darkMode!=='undefined'&&darkMode)?'#1a2a44':'#e5e7eb' }
                         }
                     }
                 }
@@ -1076,7 +1149,7 @@
                                 }
                             },
                             grid: {
-                                color: '#e5e7eb'
+                                color: (typeof darkMode!=='undefined'&&darkMode)?'#1a2a44':'#e5e7eb'
                             }
                         },
                         y: {
@@ -1085,7 +1158,7 @@
                                 text: 'Energy (eV)'
                             },
                             grid: {
-                                color: '#e5e7eb'
+                                color: (typeof darkMode!=='undefined'&&darkMode)?'#1a2a44':'#e5e7eb'
                             }
                         }
                     }
@@ -1547,6 +1620,54 @@
             } catch (e) {
                 console.error('Failed to load saved state:', e);
             }
+        }
+
+        // ═══════════════════════════
+        // THEME TOGGLE
+        // ═══════════════════════════
+        let darkMode = false;
+        const themeBtn = document.getElementById('theme-toggle');
+
+        function getChartColors() {
+            return {
+                grid: darkMode ? '#1a2a44' : '#e5e7eb',
+                tick: darkMode ? '#c8d8f0' : '#666',
+                title: darkMode ? '#c8d8f0' : '#666',
+                legend: darkMode ? '#c8d8f0' : '#666'
+            };
+        }
+
+        function applyChartTheme(c) {
+            if (!c) return;
+            const colors = getChartColors();
+            const scales = c.options.scales;
+            if (scales) {
+                Object.values(scales).forEach(axis => {
+                    if (axis.grid) axis.grid.color = colors.grid;
+                    if (axis.ticks) axis.ticks.color = colors.tick;
+                    if (axis.title) axis.title.color = colors.title;
+                });
+            }
+            if (c.options.plugins && c.options.plugins.legend) {
+                c.options.plugins.legend.labels = c.options.plugins.legend.labels || {};
+                c.options.plugins.legend.labels.color = colors.legend;
+            }
+            c.update();
+        }
+
+        function updateAllChartThemes() {
+            if (typeof chart !== 'undefined' && chart) applyChartTheme(chart);
+            if (typeof potentialChart !== 'undefined' && potentialChart) applyChartTheme(potentialChart);
+            if (typeof efieldChart !== 'undefined' && efieldChart) applyChartTheme(efieldChart);
+        }
+
+        if (themeBtn) {
+            themeBtn.addEventListener('click', () => {
+                darkMode = !darkMode;
+                document.body.classList.toggle('dark-mode', darkMode);
+                themeBtn.textContent = darkMode ? '☀ Light' : '☾ Dark';
+                updateAllChartThemes();
+            });
         }
 
         // Initialize
