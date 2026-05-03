@@ -1675,7 +1675,7 @@
         // Read theme from URL param or localStorage
         (function(){
           var _tp=new URLSearchParams(window.location.search).get('theme');
-          if(_tp) localStorage.setItem('isd-theme',_tp);
+          if(_tp==='dark' || _tp==='light') localStorage.setItem('isd-theme',_tp);
           var _saved=localStorage.getItem('isd-theme');
           if(_saved==='dark' && themeBtn) themeBtn.click();
         })();
